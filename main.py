@@ -1,12 +1,12 @@
 import sys
 import pygame
-import requests
 from sys import exit
 from grid import Grid
+import numpy as np
 
 pygame.init()
 
-WIDTH = 550
+WIDTH = 850
 HEIGHT = 550
 BACKGROUND_COLOR = (255, 255, 255)
 FONT = pygame.font.SysFont("Comic Sans MS", 35)
@@ -16,6 +16,59 @@ BLACK = (0, 0, 0)
 
 grid = Grid.get_puzzle_grid()
 original_grid = Grid.get_original_grid()
+
+
+class Solver:
+    def print_board(grid):
+        print(np.matrix(grid))
+
+    def find_empty(grid):
+        for y in range(9):
+            for x in range(9):
+                if grid[y][x] == 0:
+                    return (y, x)
+
+        return None
+
+    def valid(grid, num, pos):
+        # check row
+        for i in range(len(grid[0])):
+            if grid[pos[0]][i] == num and pos[1] != i:
+                return False
+
+        # check column
+        for i in range(len(grid)):
+            if grid[i][pos[1]] == num and pos[0] != i:
+                return False
+
+        # check box
+        box_y = pos[0] // 3
+        box_x = pos[1] // 3
+
+        for i in range(box_y * 3, box_y * 3 + 3):
+            for j in range(box_x * 3, box_x * 3 + 3):
+                if grid[i][j] == num and (i, j) != pos:
+                    return False
+
+        return True
+
+    def solve(grid):
+        find = Solver.find_empty(grid)
+        if not find:
+            return True
+        else:
+            row, col = find
+
+        for i in range(1, 10):
+            if Solver.valid(grid, i, (row, col)):
+                grid[row][col] = i
+
+                if Solver.solve(grid):
+                    return True
+
+                grid[row][col] = 0
+
+        return False
 
 
 class Sudoku:
@@ -31,20 +84,6 @@ class Sudoku:
 
             pygame.draw.line(win, BLACK, (50 + 50 * i, 50), (50 + 50 * i, 500), 2)
             pygame.draw.line(win, BLACK, (50, 50 + 50 * i), (500, 50 + 50 * i), 2)
-
-    # def get_puzzle_grid():
-    #     response = requests.get("https://sugoku.herokuapp.com/board?difficulty=easy")
-    #     grid = response.json()["board"]
-
-    #     return grid
-
-    # def get_original_grid():
-    #     grid = Sudoku.get_puzzle_grid()
-    #     original_grid = [
-    #         [grid[x][y] for y in range(len(grid[0]))] for x in range(len(grid))
-    #     ]
-
-    #     return original_grid
 
     def get_game_numbers(win):
         for i in range(0, len(grid[0])):
